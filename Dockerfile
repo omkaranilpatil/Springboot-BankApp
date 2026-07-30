@@ -1,37 +1,48 @@
 #----------------------------------
-# Stage 1
+# Stage 1: Build stage
 #----------------------------------
+# Use Maven and Java 21 to build the application
+#FROM maven:3.9-eclipse-temurin-21 as builder
 
-# Import docker image with maven installed
-FROM maven:3.8.3-openjdk-17 as builder 
+# Set working directory inside the container
+#WORKDIR /src
 
-# Add maintainer, so that new user will understand who had written this Dockerfile
-MAINTAINER Madhup Pandey<madhuppandey2908@gmail.com>
+# Copy source code from local machine into the container
+#COPY . /src
 
-# Add labels to the image to filter out if we have multiple application running
-LABEL app=bankapp
+# Build the application and skip tests for faster image creation
+#RUN mvn clean install -DskipTests=true
 
-# Set working directory
-WORKDIR /src
+#----------------------------------
+# Stage 2: Runtime stage
+#----------------------------------
+# Use a lightweight OpenJDK runtime image for the final container
+#FROM eclipse-temurin:21-jre-alpine as deployer
 
-# Copy source code from local to container
-COPY . /src
-
-# Build application and skip test cases
-RUN mvn clean install -DskipTests=true
-
-#--------------------------------------
-# Stage 2
-#--------------------------------------
-
-# Import small size java image
-FROM openjdk:17-alpine as deployer
-
-# Copy build from stage 1 (builder)
-COPY --from=builder /src/target/*.jar /src/target/bankapp.jar
+# Copy the built JAR from the builder stage into the runtime image
+#COPY --from=builder /src/target/*.jar /src/target/bankapp.jar
 
 # Expose application port 
-EXPOSE 8080
+#EXPOSE 8080 
 
 # Start the application
-ENTRYPOINT ["java", "-jar", "/src/target/bankapp.jar"]
+#ENTRYPOINT ["java", "-jar", "/src/target/bankapp.jar"]
+
+# Stage-1
+FROM maven:3.9-eclipse-temurin-21 as buildered
+
+WORKDIR /src
+
+COPY . /src
+
+RUN mvn clean install -DskipTests=true
+
+#---------------------------------------------
+# Stage-2
+FROM eclipse-temurin:21-jre-alpine as deployered
+
+COPY --from=buildered /src/target/*.jar /src/target/bankapp.jar
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "/src/target/bankapp.jar"]
