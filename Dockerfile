@@ -1,37 +1,25 @@
-#----------------------------------
-# Stage 1
-#----------------------------------
+# Stage 1: Build stage
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
-# Import docker image with maven installed
-FROM maven:3.8.3-openjdk-17 as builder 
-
-# Add maintainer, so that new user will understand who had written this Dockerfile
-MAINTAINER Madhup Pandey<madhuppandey2908@gmail.com>
-
-# Add labels to the image to filter out if we have multiple application running
-LABEL app=bankapp
-
-# Set working directory
+# Set working directory inside the container
 WORKDIR /src
 
-# Copy source code from local to container
+# Copy source code from local machine into the container
 COPY . /src
 
-# Build application and skip test cases
+# Build the application and skip tests for faster image creation
 RUN mvn clean install -DskipTests=true
 
-#--------------------------------------
-# Stage 2
-#--------------------------------------
+#----------------------------------
+# Stage 2: Runtime stage
+#----------------------------------
+FROM eclipse-temurin:21-jre-alpine AS deployer
 
-# Import small size java image
-FROM openjdk:17-alpine as deployer
+# Copy the built JAR from the builder stage into the runtime image
+COPY --from=builder /src/target/*.jar /app/bankapp.jar
 
-# Copy build from stage 1 (builder)
-COPY --from=builder /src/target/*.jar /src/target/bankapp.jar
-
-# Expose application port 
+# Expose application port
 EXPOSE 8080
 
 # Start the application
-ENTRYPOINT ["java", "-jar", "/src/target/bankapp.jar"]
+CMD ["java", "-jar", "/app/bankapp.jar"]
