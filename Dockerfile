@@ -29,7 +29,7 @@
 #ENTRYPOINT ["java", "-jar", "/src/target/bankapp.jar"]
 
 # Stage-1
-FROM maven:3.9-eclipse-temurin-21 as buildered
+FROM maven:3.9-eclipse-temurin-21 as build
 
 WORKDIR /src
 
@@ -39,7 +39,7 @@ RUN mvn clean install -DskipTests=true
 
 #---------------------------------------------
 # Stage-2
-FROM eclipse-temurin:21-jre-alpine as deployered
+FROM eclipse-temurin:21-jre-alpine as deploy
 
 COPY --from=buildered /src/target/*.jar /src/target/bankapp.jar
 
