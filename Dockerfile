@@ -1,35 +1,8 @@
-#----------------------------------
-# Stage 1: Build stage
-#----------------------------------
-# Use Maven and Java 21 to build the application
-#FROM maven:3.9-eclipse-temurin-21 as builder
+#---------------------------------------------
+# Stage 1: Build
+#---------------------------------------------
 
-# Set working directory inside the container
-#WORKDIR /src
-
-# Copy source code from local machine into the container
-#COPY . /src
-
-# Build the application and skip tests for faster image creation
-#RUN mvn clean install -DskipTests=true
-
-#----------------------------------
-# Stage 2: Runtime stage
-#----------------------------------
-# Use a lightweight OpenJDK runtime image for the final container
-#FROM eclipse-temurin:21-jre-alpine as deployer
-
-# Copy the built JAR from the builder stage into the runtime image
-#COPY --from=builder /src/target/*.jar /src/target/bankapp.jar
-
-# Expose application port 
-#EXPOSE 8080 
-
-# Start the application
-#ENTRYPOINT ["java", "-jar", "/src/target/bankapp.jar"]
-
-# Stage-1
-FROM maven:3.9-eclipse-temurin-21 as build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /src
 
@@ -37,11 +10,14 @@ COPY . /src
 
 RUN mvn clean install -DskipTests=true
 
-#---------------------------------------------
-# Stage-2
-FROM eclipse-temurin:21-jre-alpine as deploy
 
-COPY --from=buildered /src/target/*.jar /src/target/bankapp.jar
+#---------------------------------------------
+# Stage 2: Runtime
+#---------------------------------------------
+
+FROM eclipse-temurin:21-jre-alpine AS deploy
+
+COPY --from=build /src/target/*.jar /src/target/bankapp.jar
 
 EXPOSE 8080
 
